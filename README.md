@@ -11,15 +11,17 @@
 
 </div>
 
+## Install from PyPI
+
 ```bash
-uv add zspeedtest
-zspeedtest
+uv add zspeedtest  # or pip install zspeedtest
+uv run zspeedtest
 ```
 
 ## Usage
 
 ```
-zspeedtest [URL] [--requests N] [--timeout N]
+uv run zspeedtest [URL] [--requests N] [--timeout N]
 ```
 
 - `URL` — large file to download (default: 10MB test file from ThinkBroadband)
@@ -29,14 +31,16 @@ zspeedtest [URL] [--requests N] [--timeout N]
 ### Examples
 
 ```bash
-zspeedtest
-zspeedtest http://example.com/file.bin --requests 5
-zspeedtest http://example.com/file.bin -n 3 -t 15
+uv run zspeedtest
+uv run zspeedtest http://example.com/file.bin --requests 5
+uv run zspeedtest http://example.com/file.bin -n 3 -t 15
 ```
 
 Output:
 
 ```bash
+uv run zspeedtest -n 1
+
 URL: http://ipv4.download.thinkbroadband.com/10MB.zip
 Requests: 1
 ----------------------------------------------------
