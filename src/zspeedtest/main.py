@@ -7,7 +7,7 @@ import argparse
 import sys
 import textwrap
 import time
-from typing import NamedTuple, Self
+from typing import NamedTuple
 from urllib.request import Request, urlopen
 
 KB = 1024
@@ -22,7 +22,7 @@ class SpeedTestArgs(NamedTuple):
     timeout: int
 
     @classmethod
-    def from_cli(cls) -> Self:
+    def from_cli(cls) -> "SpeedTestArgs":
         parser = argparse.ArgumentParser(
             description="Internet speed tester",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
