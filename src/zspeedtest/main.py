@@ -7,7 +7,7 @@ import argparse
 import sys
 import textwrap
 import time
-from typing import NamedTuple, Self
+from typing import NamedTuple
 from urllib.request import Request, urlopen
 
 KB = 1024
@@ -22,7 +22,7 @@ class SpeedTestArgs(NamedTuple):
     timeout: int
 
     @classmethod
-    def from_cli(cls) -> Self:
+    def from_cli(cls) -> "SpeedTestArgs":
         parser = argparse.ArgumentParser(
             description="Internet speed tester",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -89,7 +89,7 @@ def format_size(bytes_count: float) -> str:
 
 def run() -> None:
     args = SpeedTestArgs.from_cli()
-    start_info = textwrap.dedent(f"""
+    start_info = textwrap.dedent(f"""\
         URL: {args.url}
         Requests: {args.requests}
         {"-" * 52}
@@ -103,11 +103,11 @@ def run() -> None:
     req = Request(args.url)
     req.add_header("User-Agent", "zspeedtest/1.0")
 
-    for i in range(args.requests):
+    for i in range(1, args.requests + 1):
         try:
             r = download_url(req, timeout=args.timeout)
         except Exception as e:  # noqa: BLE001
-            print(f"{i + 1:>3}  ERROR: {e}")
+            print(f"{i:>3}  ERROR: {e}")
             continue
 
         results.append(r)
@@ -135,7 +135,7 @@ def run() -> None:
         (r.bytes_downloaded / r.duration_seconds) / MB for r in results
     )
 
-    end_info = textwrap.dedent(f"""
+    end_info = textwrap.dedent(f"""\
         Successful requests : {len(results)} / {args.requests}
         Total downloaded    : {format_size(total_bytes)}
         Average time        : {avg_time:.2f} s

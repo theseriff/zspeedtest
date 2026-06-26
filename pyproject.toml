@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.10.9,<0.13.0"]
+requires = ["uv_build>=0.11.23,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -9,7 +9,7 @@ module-root = "src"
 name = "zspeedtest"
 version = "0.0.1"
 description = "zspeedtest"
-requires-python = ">=3.13,<3.15"
+requires-python = ">=3.10,<3.15"
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "Sergey", email = "kava.develop@protonmail.com" }]
@@ -22,6 +22,9 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
@@ -36,10 +39,10 @@ zspeedtest = "zspeedtest.main:run"
 [dependency-groups]
 lint = [
     "mypy==2.1.0",
-    "ruff==0.15.7",
+    "ruff==0.15.18",
     "bandit==1.9.4",
-    "zizmor==1.23.1",
-    "semgrep==1.156.0",
+    "zizmor==1.25.2",
+    "semgrep==1.167.0",
     "codespell==2.4.2",
     "ty==0.0.54",
     # mypy extensions
@@ -47,20 +50,20 @@ lint = [
     "types-setuptools",
 ]
 test = [
-    "pytest==9.0.2",
-    "pytest-asyncio==1.3.0",
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
     "pytest-timeout>=2.4.0",
     "pytest-cov>=6.2.1",
     "covdefaults>=2.3.0",
-    "coverage[toml]==7.13.5",
+    "coverage[toml]==7.14.1",
 ]
-docs = ["zensical==0.0.29"]
+docs = ["zensical==0.0.45"]
 dev = [
     { include-group = "lint" },
     { include-group = "test" },
     { include-group = "docs" },
     "detect-secrets==1.5.0",
-    "prek==0.3.8",
+    "prek==0.4.5",
 ]
 
 [project.urls]
@@ -109,19 +112,27 @@ exclude_also = [
 omit = ["*/__init__.py", '*/types.py']
 
 # Static Analysis
-[tool.pyrefly]
-python-version = "3.13.0"
-project-includes = ["src", "tests"]
-search-path = ["src", "tests"]
-min-severity = "warn"
-preset = "strict"
-skip-lsp-config-indexing = false
-infer-with-first-use = false
+[tool.ty.environment]
+python-version = "3.10"
+
+[tool.ty.src]
+include = ["src", "tests"]
+
+[tool.ty.rules]
+all = "error"
+unresolved-attribute = "ignore"
+
+[tool.ty.analysis]
+respect-type-ignore-comments = false
+
+[tool.ty.terminal]
+error-on-warning = true
+output-format = "concise"
 
 [tool.mypy]
 mypy_path = "src"
 files = ["src", "tests"]
-python_version = "3.13"
+python_version = "3.10"
 strict = true
 pretty = true
 warn_return_any = true
@@ -152,7 +163,7 @@ targets = "src"
 [tool.ruff]
 src = ["src"]
 include = ["src/**.py", "tests/**.py"]
-target-version = "py313"
+target-version = "py310"
 line-length = 79
 fix = true
 
