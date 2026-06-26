@@ -1,0 +1,103 @@
+fail_fast: true
+
+default_install_hook_types:
+  - pre-commit
+  - commit-msg
+
+default_stages: [pre-commit, pre-merge-commit, manual]
+repos:
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [--strict, --verbose]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-ast
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.45.0
+    hooks:
+      - id: typos
+        exclude: |
+          (?x)^(
+              .*/versions/.*\.py
+          )$
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        exclude: |
+          (?x)^(
+              \.env\.dist|
+              alembic\.ini|
+              .*/versions/.*\.py|
+          )$
+
+  - repo: local
+    hooks:
+      - id: lint
+        name: Linter
+        entry: just linter
+        language: python
+        types: [python]
+        require_serial: true
+        verbose: true
+        pass_filenames: false
+
+      - id: mypy
+        name: Mypy
+        entry: just mypy
+        language: python
+        types: [python]
+        require_serial: true
+        verbose: true
+        pass_filenames: false
+
+      - id: ty
+        name: Ty
+        entry: just ty
+        language: python
+        types: [python]
+        require_serial: true
+        verbose: true
+        pass_filenames: false
+
+      - id: bandit
+        name: bandit
+        entry: just bandit
+        language: python
+        types: [python]
+        require_serial: true
+        verbose: true
+        pass_filenames: false
+
+      - id: semgrep
+        name: semgrep
+        language: python
+        entry: just semgrep
+        types: [python]
+        require_serial: true
+        verbose: true
+        pass_filenames: false
+
+      - id: zizmor
+        name: zizmor
+        language: python
+        entry: just zizmor
+        files: ^\.github\/workflows\/
+        require_serial: true
+        verbose: true
+        pass_filenames: false
