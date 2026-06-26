@@ -9,8 +9,8 @@ on:
       - "tests/**"
       - "pyproject.toml"
       - "uv.lock"
-      - ".github/workflows/publish_coverage.yml"
-      - ".github/workflows/pr_tests.yml"
+      - ".github/workflows/publish_coverage.yaml"
+      - ".github/workflows/pr_tests.yaml"
 
 permissions:
   statuses: write
