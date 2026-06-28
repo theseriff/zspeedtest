@@ -1,13 +1,8 @@
-"""Internet speed tester.
-
-Usage: zspeedtest <URL> [--requests N]
-"""
+"""Internet speed tester."""
 
 import argparse
 import sys
 import time
-from collections.abc import Callable
-from functools import partial
 from typing import NamedTuple
 from urllib.request import Request, urlopen
 
@@ -19,6 +14,33 @@ CHUNK_SIZE = KB * 64
 def _write_stdout(text: str) -> None:
     sys.stdout.write(text)
     sys.stdout.flush()
+
+
+def _format_size(bytes_count: float) -> str:
+    for unit in ("B", "KB", "MB", "GB"):
+        if bytes_count < KB:
+            return f"{bytes_count:.1f} {unit}"
+        bytes_count /= KB
+    return f"{bytes_count:.1f} TB"
+
+
+class ProgressBar:
+    def __init__(self, number: int) -> None:
+        self.number: int = number
+        self._write(0, 0, 0.0)
+
+    def on_progress(self, current_bytes: int, current_time: float) -> None:
+        speed_mbps = (current_bytes / current_time) / MB
+        self._write(current_bytes, current_time, speed_mbps)
+
+    def finish(self) -> None:
+        _write_stdout("\n")
+
+    def _write(self, curr_bytes: int, curr_time: float, speed_mbps: float) -> None:
+        _write_stdout(
+            f"\r{self.number:>3}  {_format_size(curr_bytes):>10}"
+            f"  {curr_time:>7.2f}s  {speed_mbps:>10.2f} MB/s"
+        )
 
 
 class SpeedTestArgs(NamedTuple):
@@ -71,11 +93,10 @@ class RequestResult(NamedTuple):
 def download_url(
     req: Request,
     timeout: int,
-    on_progress: Callable[[float, float], None] = lambda _, __: None,
+    progress_bar: ProgressBar,
 ) -> RequestResult:
     total_bytes: int = 0
     total_time: float = 0
-    on_progress(total_bytes, total_time)
 
     start = time.perf_counter()
     # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected  # noqa: E501, ERA001
@@ -83,28 +104,11 @@ def download_url(
         while chunk := response.read(CHUNK_SIZE):
             total_bytes += len(chunk)
             total_time = time.perf_counter() - start
-            on_progress(total_bytes, total_time)
+            progress_bar.on_progress(total_bytes, total_time)
 
-    return RequestResult(
-        duration_seconds=total_time,
-        bytes_downloaded=total_bytes,
-    )
+    progress_bar.finish()
 
-
-def format_size(bytes_count: float) -> str:
-    for unit in ("B", "KB", "MB", "GB"):
-        if bytes_count < KB:
-            return f"{bytes_count:.1f} {unit}"
-        bytes_count /= KB
-    return f"{bytes_count:.1f} TB"
-
-
-def write_progress_bar(number: int, current_bytes: float, current_time: float) -> None:
-    speed_mbps = (current_bytes / current_time) / MB if current_time > 0 else 0.0
-    _write_stdout(
-        f"\r{number:>3}  {format_size(current_bytes):>10}"
-        f"  {current_time:>7.2f}s  {speed_mbps:>10.2f} MB/s"
-    )
+    return RequestResult(duration_seconds=total_time, bytes_downloaded=total_bytes)
 
 
 def run() -> None:
@@ -127,11 +131,10 @@ def run() -> None:
             r = download_url(
                 req,
                 timeout=args.timeout,
-                on_progress=partial(write_progress_bar, i),
+                progress_bar=ProgressBar(i),
             )
-            _write_stdout("\n")
         except Exception as e:  # noqa: BLE001
-            _write_stdout(f"{i:>3}  ERROR: {e}")
+            _write_stdout(f"\r{i:>3}  ERROR: {e}\n")
             continue
 
         results.append(r)
@@ -139,6 +142,7 @@ def run() -> None:
     if not results:
         _write_stdout("\nNo requests completed successfully.")
         sys.exit(1)
+
     _write_stdout("=" * 52 + "\n")
 
     total_bytes = sum(r.bytes_downloaded for r in results)
@@ -149,7 +153,7 @@ def run() -> None:
     max_speed = max((r.bytes_downloaded / r.duration_seconds) / MB for r in results)
     _write_stdout(
         f"Successful requests : {len(results)} / {args.requests}\n"
-        f"Total downloaded    : {format_size(total_bytes)}\n"
+        f"Total downloaded    : {_format_size(total_bytes)}\n"
         f"Average time        : {avg_time:.2f} s\n"
         f"Average speed       : {avg_speed:.2f} MB/s\n"
         f"Min / Max           : {min_speed:.2f} / {max_speed:.2f} MB/s\n"

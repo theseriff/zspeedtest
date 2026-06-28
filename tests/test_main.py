@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from zspeedtest.main import SpeedTestArgs, download_url, format_size, run
+from zspeedtest.main import SpeedTestArgs, _format_size, download_url, run
 
 _4K = 4096
 _1M = 1024 * 1024
@@ -23,57 +23,66 @@ def _create_mock_response(data: bytes) -> io.BytesIO:
 
 class TestFormatSize:
     def test_bytes(self) -> None:
-        assert format_size(0) == "0.0 B"
-        assert format_size(512) == "512.0 B"
-        assert format_size(1023) == "1023.0 B"
+        assert _format_size(0) == "0.0 B"
+        assert _format_size(512) == "512.0 B"
+        assert _format_size(1023) == "1023.0 B"
 
     def test_kilobytes(self) -> None:
-        assert format_size(1024) == "1.0 KB"
-        assert format_size(2048) == "2.0 KB"
-        assert format_size(1536) == "1.5 KB"
+        assert _format_size(1024) == "1.0 KB"
+        assert _format_size(2048) == "2.0 KB"
+        assert _format_size(1536) == "1.5 KB"
 
     def test_megabytes(self) -> None:
-        assert format_size(1024**2) == "1.0 MB"
-        assert format_size(5 * 1024**2) == "5.0 MB"
+        assert _format_size(1024**2) == "1.0 MB"
+        assert _format_size(5 * 1024**2) == "5.0 MB"
 
     def test_gigabytes(self) -> None:
-        assert format_size(1024**3) == "1.0 GB"
-        assert format_size(3 * 1024**3) == "3.0 GB"
+        assert _format_size(1024**3) == "1.0 GB"
+        assert _format_size(3 * 1024**3) == "3.0 GB"
 
     def test_terabytes(self) -> None:
-        assert format_size(1024**4) == "1.0 TB"
-        assert format_size(2.5 * 1024**4) == "2.5 TB"
+        assert _format_size(1024**4) == "1.0 TB"
+        assert _format_size(2.5 * 1024**4) == "2.5 TB"
 
 
 class TestDownloadUrl:
     def test_successful_download(self) -> None:
         mock_response = _create_mock_response(b"x" * _4K)
+        mock_progress_bar = MagicMock()
 
         req = MagicMock()
         with patch("zspeedtest.main.urlopen", return_value=mock_response):
-            result = download_url(req, timeout=10)
+            result = download_url(req, timeout=10, progress_bar=mock_progress_bar)
 
         assert result.bytes_downloaded == _4K
         assert result.duration_seconds > 0
+        mock_progress_bar.on_progress.assert_called()
+        mock_progress_bar.finish.assert_called_once()
 
     def test_empty_response(self) -> None:
         mock_response = _create_mock_response(b"")
+        mock_progress_bar = MagicMock()
 
         req = MagicMock()
         with patch("zspeedtest.main.urlopen", return_value=mock_response):
-            result = download_url(req, timeout=10)
+            result = download_url(req, timeout=10, progress_bar=mock_progress_bar)
 
         assert result.bytes_downloaded == 0
         assert result.duration_seconds == 0
+        mock_progress_bar.on_progress.assert_not_called()
+        mock_progress_bar.finish.assert_called_once()
 
     def test_large_download(self) -> None:
         mock_response = _create_mock_response(b"y" * (1024 * 128))
+        mock_progress_bar = MagicMock()
 
         req = MagicMock()
         with patch("zspeedtest.main.urlopen", return_value=mock_response):
-            result = download_url(req, timeout=10)
+            result = download_url(req, timeout=10, progress_bar=mock_progress_bar)
 
         assert result.bytes_downloaded == 1024 * 128
+        mock_progress_bar.on_progress.assert_called()
+        mock_progress_bar.finish.assert_called_once()
 
 
 class TestSpeedTestArgs:
