@@ -99,15 +99,8 @@ def format_size(bytes_count: float) -> str:
     return f"{bytes_count:.1f} TB"
 
 
-def write_progress_bar(
-    number: int,
-    current_bytes: float,
-    current_time: float,
-) -> None:
-    if current_bytes == 0 and current_time == 0:
-        speed_mbps = 0
-    else:
-        speed_mbps = (current_bytes / current_time) / MB
+def write_progress_bar(number: int, current_bytes: float, current_time: float) -> None:
+    speed_mbps = (current_bytes / current_time) / MB if current_time > 0 else 0.0
     _write_stdout(
         f"\r{number:>3}  {format_size(current_bytes):>10}"
         f"  {current_time:>7.2f}s  {speed_mbps:>10.2f} MB/s"
@@ -152,12 +145,8 @@ def run() -> None:
     total_time = sum(r.duration_seconds for r in results)
     avg_time = total_time / len(results)
     avg_speed = (total_bytes / total_time) / MB
-    min_speed = min(
-        (r.bytes_downloaded / r.duration_seconds) / MB for r in results
-    )
-    max_speed = max(
-        (r.bytes_downloaded / r.duration_seconds) / MB for r in results
-    )
+    min_speed = min((r.bytes_downloaded / r.duration_seconds) / MB for r in results)
+    max_speed = max((r.bytes_downloaded / r.duration_seconds) / MB for r in results)
     _write_stdout(
         f"Successful requests : {len(results)} / {args.requests}\n"
         f"Total downloaded    : {format_size(total_bytes)}\n"
@@ -165,7 +154,3 @@ def run() -> None:
         f"Average speed       : {avg_speed:.2f} MB/s\n"
         f"Min / Max           : {min_speed:.2f} / {max_speed:.2f} MB/s\n"
     )
-
-
-if __name__ == "__main__":
-    run()

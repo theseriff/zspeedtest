@@ -155,9 +155,7 @@ class TestRun:
         assert "MB/s" in captured.out
         assert "ERROR" not in captured.out
 
-    def test_all_requests_fail(
-        self, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_all_requests_fail(self, capsys: pytest.CaptureFixture[str]) -> None:
         test_argv = ["prog", "http://example.com/file.bin", "--requests", "3"]
 
         with (
@@ -174,9 +172,7 @@ class TestRun:
         captured = capsys.readouterr()
         assert "No requests completed successfully" in captured.out
 
-    def test_partial_failures(
-        self, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_partial_failures(self, capsys: pytest.CaptureFixture[str]) -> None:
         data = b"b" * 4096
 
         def make_response(*_: object, **__: object) -> io.BytesIO:
