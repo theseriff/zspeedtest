@@ -174,7 +174,6 @@ ignore = [
     "D213",   # Conflict: D213 ("multi-line summary second line") conflicts with D212 (summary on the same line as triple quotes). We follow D212.
     "COM812", # Conflict: Danger! This rule ("trailing-comma-missing") conflicts with the automatic behavior of "ruff format", which manages trailing commas.
     "SLF001",
-    "T201",   # print
     "RUF001", # cyrillic
     "D",
     "S310",
