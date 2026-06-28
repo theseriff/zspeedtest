@@ -5,15 +5,20 @@ Usage: zspeedtest <URL> [--requests N]
 
 import argparse
 import sys
-import textwrap
 import time
+from collections.abc import Callable
+from functools import partial
 from typing import NamedTuple
 from urllib.request import Request, urlopen
 
 KB = 1024
 MB = KB**2
 CHUNK_SIZE = KB * 64
-DEFAULT_URL = "http://ipv4.download.thinkbroadband.com/10MB.zip"
+
+
+def _write_stdout(text: str) -> None:
+    sys.stdout.write(text)
+    sys.stdout.flush()
 
 
 class SpeedTestArgs(NamedTuple):
@@ -30,7 +35,7 @@ class SpeedTestArgs(NamedTuple):
         parser.add_argument(
             "url",
             nargs="?",
-            default=DEFAULT_URL,
+            default="http://ipv4.download.thinkbroadband.com/10MB.zip",
             help="URL of a large file to download",
         )
         parser.add_argument(
@@ -63,18 +68,25 @@ class RequestResult(NamedTuple):
     bytes_downloaded: int
 
 
-def download_url(req: Request, timeout: int) -> RequestResult:
-    start = time.perf_counter()
+def download_url(
+    req: Request,
+    timeout: int,
+    on_progress: Callable[[float, float], None] = lambda _, __: None,
+) -> RequestResult:
     total_bytes: int = 0
+    total_time: float = 0
+    on_progress(total_bytes, total_time)
 
+    start = time.perf_counter()
     # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected  # noqa: E501, ERA001
     with urlopen(req, timeout=timeout) as response:  # nosec
         while chunk := response.read(CHUNK_SIZE):
             total_bytes += len(chunk)
+            total_time = time.perf_counter() - start
+            on_progress(total_bytes, total_time)
 
-    duration = time.perf_counter() - start
     return RequestResult(
-        duration_seconds=duration,
+        duration_seconds=total_time,
         bytes_downloaded=total_bytes,
     )
 
@@ -87,16 +99,30 @@ def format_size(bytes_count: float) -> str:
     return f"{bytes_count:.1f} TB"
 
 
+def write_progress_bar(
+    number: int,
+    current_bytes: float,
+    current_time: float,
+) -> None:
+    if current_bytes == 0 and current_time == 0:
+        speed_mbps = 0
+    else:
+        speed_mbps = (current_bytes / current_time) / MB
+    _write_stdout(
+        f"\r{number:>3}  {format_size(current_bytes):>10}"
+        f"  {current_time:>7.2f}s  {speed_mbps:>10.2f} MB/s"
+    )
+
+
 def run() -> None:
     args = SpeedTestArgs.from_cli()
-    start_info = textwrap.dedent(f"""\
-        URL: {args.url}
-        Requests: {args.requests}
-        {"-" * 52}
-        {"#":>3}  {"Size":>10}  {"Time":>8}  {"Speed":>12}
-        {"-" * 52}
-    """)
-    print(start_info)
+    _write_stdout(
+        f"URL: {args.url}\n"
+        f"Requests: {args.requests}\n"
+        f"{'-' * 52}\n"
+        f"{'#':>3}  {'Size':>10}  {'Time':>8}  {'Speed':>12}\n"
+        f"{'-' * 52}\n"
+    )
 
     results: list[RequestResult] = []
 
@@ -105,24 +131,22 @@ def run() -> None:
 
     for i in range(1, args.requests + 1):
         try:
-            r = download_url(req, timeout=args.timeout)
+            r = download_url(
+                req,
+                timeout=args.timeout,
+                on_progress=partial(write_progress_bar, i),
+            )
+            _write_stdout("\n")
         except Exception as e:  # noqa: BLE001
-            print(f"{i:>3}  ERROR: {e}")
+            _write_stdout(f"{i:>3}  ERROR: {e}")
             continue
 
         results.append(r)
 
-        speed_mbps = (r.bytes_downloaded / r.duration_seconds) / MB
-        print(
-            f"{i:>3}  {format_size(r.bytes_downloaded):>10}"
-            f"  {r.duration_seconds:>7.2f}s  {speed_mbps:>10.2f} MB/s"
-        )
-
     if not results:
-        print("\nNo requests completed successfully.")
+        _write_stdout("\nNo requests completed successfully.")
         sys.exit(1)
-
-    print("=" * 52)
+    _write_stdout("=" * 52 + "\n")
 
     total_bytes = sum(r.bytes_downloaded for r in results)
     total_time = sum(r.duration_seconds for r in results)
@@ -134,15 +158,13 @@ def run() -> None:
     max_speed = max(
         (r.bytes_downloaded / r.duration_seconds) / MB for r in results
     )
-
-    end_info = textwrap.dedent(f"""\
-        Successful requests : {len(results)} / {args.requests}
-        Total downloaded    : {format_size(total_bytes)}
-        Average time        : {avg_time:.2f} s
-        Average speed       : {avg_speed:.2f} MB/s
-        Min / Max           : {min_speed:.2f} / {max_speed:.2f} MB/s
-    """)
-    print(end_info)
+    _write_stdout(
+        f"Successful requests : {len(results)} / {args.requests}\n"
+        f"Total downloaded    : {format_size(total_bytes)}\n"
+        f"Average time        : {avg_time:.2f} s\n"
+        f"Average speed       : {avg_speed:.2f} MB/s\n"
+        f"Min / Max           : {min_speed:.2f} / {max_speed:.2f} MB/s\n"
+    )
 
 
 if __name__ == "__main__":

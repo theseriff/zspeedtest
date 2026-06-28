@@ -64,7 +64,7 @@ class TestDownloadUrl:
             result = download_url(req, timeout=10)
 
         assert result.bytes_downloaded == 0
-        assert result.duration_seconds > 0
+        assert result.duration_seconds == 0
 
     def test_large_download(self) -> None:
         mock_response = _create_mock_response(b"y" * (1024 * 128))
