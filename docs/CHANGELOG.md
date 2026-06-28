@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.2.1 (2026-06-28)
+
+### Bug Fixes
+
+- **zspeedtest**: Reset progress line and add newline on error
+  ([`1d28d2c`](https://github.com/theseriff/zspeedtest/commit/1d28d2c5bb5799597e9fd4727530771914560c01))
+
+
 ## v0.2.0 (2026-06-28)
 
 ### Features
