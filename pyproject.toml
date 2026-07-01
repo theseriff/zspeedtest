@@ -39,9 +39,9 @@ zspeedtest = "zspeedtest.main:run"
 [dependency-groups]
 lint = [
     "mypy==2.1.0",
-    "ruff==0.15.18",
+    "ruff==0.15.19",
     "bandit==1.9.4",
-    "zizmor==1.25.2",
+    "zizmor==1.26.1",
     "semgrep==1.167.0",
     "codespell==2.4.2",
     "ty==0.0.54",
@@ -55,9 +55,9 @@ test = [
     "pytest-timeout>=2.4.0",
     "pytest-cov>=6.2.1",
     "covdefaults>=2.3.0",
-    "coverage[toml]==7.14.1",
+    "coverage[toml]==7.14.3",
 ]
-docs = ["zensical==0.0.45"]
+docs = ["zensical==0.0.46"]
 dev = [
     { include-group = "lint" },
     { include-group = "test" },
